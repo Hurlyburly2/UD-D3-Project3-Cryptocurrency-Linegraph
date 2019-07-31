@@ -50,20 +50,33 @@ let line = d3.line()
   .x((data) => { return x(data.year)} )
   .y((data) => { return y(data.value)} )
 
-d3.json('data/example.json').then((data) => {
-  // Data cleaning
-  data.forEach((data) => {
-    data.year = parseTime(data.year)
-    data.value = parseInt(data.value)
+// Get from page
+
+
+d3.json('data/coins.json').then((data) => {
+  let currencies = Object.keys(data)
+  let cleanData = {}
+  let parseTime = d3.timeParse("%m/%d/%Y")
+  
+  currencies.forEach((currency) => {
+    cleanData[currency] = []
+    data[currency].forEach((day) => {
+      if (day["24h_vol"] != null && day.date != null && day.market_cap != null && day.price_usd != null) {
+        new_day = {
+          daily_vol: parseInt(day["24h_vol"]),
+          day: parseTime(day.date),
+          market_cap: parseInt(day.market_cap),
+          price_usd: parseFloat(day.price_usd)
+        }
+        cleanData[currency].push(new_day)
+      }
+    })
   })
 
-  // min/max dates
   x.domain(d3.extent(data, (data) => { return data.year }))  
-  // lowest value / 1.005, highest value * 1.005
   y.domain([d3.min(data, (data) => { return data.value }) / 1.005, 
       d3.max(data, (data) => { return data.value }) * 1.005 ])
 
-  // generate axes once scales have been set
   xAxis.call(xAxisCall.scale(x))
   yAxis.call(yAxisCall.scale(y))
 
