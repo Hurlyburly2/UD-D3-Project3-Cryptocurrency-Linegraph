@@ -26,7 +26,7 @@ let y = d3.scaleLinear().range([height, 0])
 let xAxisCall = d3.axisBottom()
   .ticks(4)
 let yAxisCall = d3.axisLeft()
-  .tickFormat((string) => { return parseInt(string / 1000) + "k"})
+  // .tickFormat((string) => { return parseInt(string / 1000) + "k"})
 
 // Axis groups
 let xAxis = g.append('g')
@@ -124,11 +124,16 @@ $("#var-select")
   .on('change', () => {
     update()
   })
+  
+$("#coin-select")
+  .on('change', () => {
+    update()
+  })
 
 const update = () => {
-  let currentCoin = "bitcoin"
+  let currentCoin = $("#coin-select").val()
   let currentDataType = $("#var-select").val()
-  let t = d3.transition().duration(500)
+  var t = function(){ return d3.transition().duration(500); }
   
   let currentCoinData = cleanData[currentCoin]
   
@@ -136,14 +141,17 @@ const update = () => {
   y.domain([d3.min(currentCoinData, (currency) => { return currency[currentDataType] }), 
       d3.max(currentCoinData, (currency) => { return currency[currentDataType] }) ])
   
-  xAxis.call(xAxisCall.scale(x))
-  yAxis.call(yAxisCall.scale(y))
+  xAxis
+    .transition(t())
+    .call(xAxisCall.scale(x))
+  yAxis
+    .transition(t())
+    .call(yAxisCall.scale(y))
   
   let line = d3.line()
     .x((data) => { return x(data.day)} )
     .y((data) => { return y(data[currentDataType])} )
   
-  debugger  
   if (currentDataType == "price_usd") {
     yLabel.text("Price (USD)")
   } else if (currentDataType == "market_cap") {
