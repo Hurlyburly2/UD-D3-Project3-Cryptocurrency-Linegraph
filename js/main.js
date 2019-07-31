@@ -24,6 +24,7 @@ let y = d3.scaleLinear().range([height, 0])
 
 // Axis generators
 let xAxisCall = d3.axisBottom()
+  .ticks(4)
 let yAxisCall = d3.axisLeft()
   .tickFormat((string) => { return parseInt(string / 1000) + "k"})
 
@@ -35,26 +36,27 @@ let yAxis = g.append('g')
   .attr('class', 'y axis')
 
 // Y Axis Label
-yAxis.append('text')
+let yLabel = g.append('text')
   .attr('class', 'axis-title')
   .attr('transform', 'rotate(-90)')
-  .attr('y', 6)
-  .attr('dy', '.71em')
+  .attr('x', 0)
+  .attr('y', 30)
   .style('text-anchor', 'end')
+  .style('font-size', '20px')
   .attr('fill', '#5D6971')
-  .text('Price (USD)')
-
-// Line path generator
-let line = d3.line()
-  .x((data) => { return x(data.day)} )
-  .y((data) => { return y(data.price_usd)} )
 
 // Get from page
+let cleanData = {}
 
+// First Line
+g.append('path')
+  .attr('class', 'line')
+  .attr('fill', 'none')
+  .attr('stroke', 'grey')
+  .attr('stroke-width', '1px')
 
 d3.json('data/coins.json').then((data) => {
   let currencies = Object.keys(data)
-  let cleanData = {}
   let parseTime = d3.timeParse("%d/%m/%Y")
   
   currencies.forEach((currency) => {
@@ -70,28 +72,9 @@ d3.json('data/coins.json').then((data) => {
         cleanData[currency].push(new_day)
       }
     })
-    // cleanData[currency] = cleanData[currency].sort((a, b) => { return a.day - b.day })
+    
+    update(cleanData)
   })
-  
-  debugger
-  console.log(cleanData.bitcoin)
-  
-  let currentCoin = "bitcoin"
-  let currentCoinData = cleanData[currentCoin]
-  
-  x.domain(d3.extent(currentCoinData, (currency) => { return currency.day }))  
-  y.domain([d3.min(currentCoinData, (currency) => { return currency.price_usd }), 
-      d3.max(currentCoinData, (currency) => { return currency.price_usd }) ])
-  
-  xAxis.call(xAxisCall.scale(x))
-  yAxis.call(yAxisCall.scale(y))
-  
-  g.append('path')
-    .attr('class', 'line')
-    .attr('fill', 'none')
-    .attr('stroke', 'grey')
-    .attr('stroke-width', '3px')
-    .attr('d', line(currentCoinData))
   
   // //  TOOLTIP
   // 
@@ -136,3 +119,40 @@ d3.json('data/coins.json').then((data) => {
   //   focus.select('.y-hover-line').attr('x2', -x(d.year))    // does the same with y-axis
   // }
 })
+
+$("#var-select")
+  .on('change', () => {
+    update()
+  })
+
+const update = () => {
+  let currentCoin = "bitcoin"
+  let currentDataType = $("#var-select").val()
+  let t = d3.transition().duration(500)
+  
+  let currentCoinData = cleanData[currentCoin]
+  
+  x.domain(d3.extent(currentCoinData, (currency) => { return currency.day }))  
+  y.domain([d3.min(currentCoinData, (currency) => { return currency[currentDataType] }), 
+      d3.max(currentCoinData, (currency) => { return currency[currentDataType] }) ])
+  
+  xAxis.call(xAxisCall.scale(x))
+  yAxis.call(yAxisCall.scale(y))
+  
+  let line = d3.line()
+    .x((data) => { return x(data.day)} )
+    .y((data) => { return y(data[currentDataType])} )
+  
+  debugger  
+  if (currentDataType == "price_usd") {
+    yLabel.text("Price (USD)")
+  } else if (currentDataType == "market_cap") {
+    yLabel.text("Market Capitalization")
+  } else if (currentDataType == "daily_vol") {
+    yLabel.text("24 Hour Trading Volume")
+  }
+    
+  g.select('.line')
+    .transition(t)
+    .attr('d', line(cleanData[currentCoin]))
+}
