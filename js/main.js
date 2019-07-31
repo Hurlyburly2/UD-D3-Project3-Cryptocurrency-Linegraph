@@ -25,7 +25,6 @@ let y = d3.scaleLinear().range([height, 0])
 // Axis generators
 let xAxisCall = d3.axisBottom()
 let yAxisCall = d3.axisLeft()
-  .ticks(6)
   .tickFormat((string) => { return parseInt(string / 1000) + "k"})
 
 // Axis groups
@@ -43,12 +42,12 @@ yAxis.append('text')
   .attr('dy', '.71em')
   .style('text-anchor', 'end')
   .attr('fill', '#5D6971')
-  .text('Population')
+  .text('Price (USD)')
 
 // Line path generator
 let line = d3.line()
-  .x((data) => { return x(data.year)} )
-  .y((data) => { return y(data.value)} )
+  .x((data) => { return x(data.day)} )
+  .y((data) => { return y(data.price_usd)} )
 
 // Get from page
 
@@ -56,7 +55,7 @@ let line = d3.line()
 d3.json('data/coins.json').then((data) => {
   let currencies = Object.keys(data)
   let cleanData = {}
-  let parseTime = d3.timeParse("%m/%d/%Y")
+  let parseTime = d3.timeParse("%d/%m/%Y")
   
   currencies.forEach((currency) => {
     cleanData[currency] = []
@@ -71,62 +70,69 @@ d3.json('data/coins.json').then((data) => {
         cleanData[currency].push(new_day)
       }
     })
+    // cleanData[currency] = cleanData[currency].sort((a, b) => { return a.day - b.day })
   })
-
-  x.domain(d3.extent(data, (data) => { return data.year }))  
-  y.domain([d3.min(data, (data) => { return data.value }) / 1.005, 
-      d3.max(data, (data) => { return data.value }) * 1.005 ])
-
+  
+  debugger
+  console.log(cleanData.bitcoin)
+  
+  let currentCoin = "bitcoin"
+  let currentCoinData = cleanData[currentCoin]
+  
+  x.domain(d3.extent(currentCoinData, (currency) => { return currency.day }))  
+  y.domain([d3.min(currentCoinData, (currency) => { return currency.price_usd }), 
+      d3.max(currentCoinData, (currency) => { return currency.price_usd }) ])
+  
   xAxis.call(xAxisCall.scale(x))
   yAxis.call(yAxisCall.scale(y))
-
+  
   g.append('path')
     .attr('class', 'line')
     .attr('fill', 'none')
     .attr('stroke', 'grey')
     .attr('stroke-width', '3px')
-    .attr('d', line(data))
-    
-  //  TOOLTIP
+    .attr('d', line(currentCoinData))
   
-  let focus = g.append('g') // hide or show whole tooltip
-    .attr('class', 'focus')
-    .style('display', 'none')
-    
-  focus.append('line')    // adds a vertical line from x-axis to focused point
-    .attr('class', 'x-hover-line hover-line')
-    .attr('y1', 0)
-    .attr('y2', height)
-    
-  focus.append('line')    // adds a horizontal line
-    .attr('class', 'y-hover-line hover-line')
-    .attr('x1', 0)
-    .attr('x2', width)
-    
-  focus.append('circle')    // adds circle to focus
-    .attr('r', 7.5)
-    
-  focus.append('text')      // appends text to focus
-    .attr('x', 15)
-    .attr('dy', '.31em')
-    
-  g.append('rect')          // invisible rectange for attaching events
-    .attr('class', 'overlay')
-    .attr('width', width)
-    .attr('height', height)
-    .on('mouseover', () => { focus.style('display', null) })
-    .on('mouseout', () => { focus.style('display', 'none') })
-    .on('mousemove', mousemove)
-    
-  function mousemove() {
-    let x0 = x.invert(d3.mouse(this)[0])  // find time value that matches coordinate info of mouse
-    let i = bisectDate(data, x0, 1)   // find the date where the time would belong if it was a datapoint
-    let d0 = data[i - 1]
-    let d1 = data[i]
-    let d = x0 - d0.year > d1.year - x0 ? d1 : d0     // comparing date we're looking at with closest two time values. Returns closest data point
-    focus.attr('transform', 'translate(' + x(d.year) + ", " + y(d.value) + ")")   // shifts focus to data point we want to be looking at
-    focus.select('text').text(d.value)    // update tooltip with y value we're looking at
-    focus.select('.x-hover-line').attr('y2', height - y(d.value))   // adjusts second point of x-axis line to new y value
-    focus.select('.y-hover-line').attr('x2', -x(d.year))    // does the same with y-axis
-  }
+  // //  TOOLTIP
+  // 
+  // let focus = g.append('g') // hide or show whole tooltip
+  //   .attr('class', 'focus')
+  //   .style('display', 'none')
+  // 
+  // focus.append('line')    // adds a vertical line from x-axis to focused point
+  //   .attr('class', 'x-hover-line hover-line')
+  //   .attr('y1', 0)
+  //   .attr('y2', height)
+  // 
+  // focus.append('line')    // adds a horizontal line
+  //   .attr('class', 'y-hover-line hover-line')
+  //   .attr('x1', 0)
+  //   .attr('x2', width)
+  // 
+  // focus.append('circle')    // adds circle to focus
+  //   .attr('r', 7.5)
+  // 
+  // focus.append('text')      // appends text to focus
+  //   .attr('x', 15)
+  //   .attr('dy', '.31em')
+  // 
+  // g.append('rect')          // invisible rectange for attaching events
+  //   .attr('class', 'overlay')
+  //   .attr('width', width)
+  //   .attr('height', height)
+  //   .on('mouseover', () => { focus.style('display', null) })
+  //   .on('mouseout', () => { focus.style('display', 'none') })
+  //   .on('mousemove', mousemove)
+  // 
+  // function mousemove() {
+  //   let x0 = x.invert(d3.mouse(this)[0])  // find time value that matches coordinate info of mouse
+  //   let i = bisectDate(data, x0, 1)   // find the date where the time would belong if it was a datapoint
+  //   let d0 = data[i - 1]
+  //   let d1 = data[i]
+  //   let d = x0 - d0.year > d1.year - x0 ? d1 : d0     // comparing date we're looking at with closest two time values. Returns closest data point
+  //   focus.attr('transform', 'translate(' + x(d.year) + ", " + y(d.value) + ")")   // shifts focus to data point we want to be looking at
+  //   focus.select('text').text(d.value)    // update tooltip with y value we're looking at
+  //   focus.select('.x-hover-line').attr('y2', height - y(d.value))   // adjusts second point of x-axis line to new y value
+  //   focus.select('.y-hover-line').attr('x2', -x(d.year))    // does the same with y-axis
+  // }
 })
