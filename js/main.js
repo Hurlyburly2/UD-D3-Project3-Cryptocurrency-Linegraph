@@ -11,8 +11,6 @@ let svg = d3.select("#chart-area").append('svg')
 let g = svg.append('g')
   .attr('transform', 'translate(' + margin.left + ", " + margin.top + ')');
 
-// time parses for x-scale (interprets 4-digit strings as years)
-let parseTime = d3.timeParse("%Y")
 
 // For tooltip
 // returns the index of a date in an array if it was added in order
@@ -47,6 +45,9 @@ let yLabel = g.append('text')
 
 // Get from page
 let cleanData = {}
+let parseTime = d3.timeParse("%d/%m/%Y")
+let maximumYear = parseTime("31/10/2017").getTime()
+let minimumYear = parseTime("12/05/2013").getTime()
 
 // First Line
 g.append('path')
@@ -57,7 +58,6 @@ g.append('path')
 
 d3.json('data/coins.json').then((data) => {
   let currencies = Object.keys(data)
-  let parseTime = d3.timeParse("%d/%m/%Y")
   
   currencies.forEach((currency) => {
     cleanData[currency] = []
@@ -135,7 +135,10 @@ const update = () => {
   let currentDataType = $("#var-select").val()
   var t = function(){ return d3.transition().duration(500); }
   
-  let currentCoinData = cleanData[currentCoin]
+  let sliderValues = $("#date-slider").slider("values")
+  let currentCoinData = cleanData[currentCoin].filter((day) => {
+    return day.day >= sliderValues[0] && day.day <= sliderValues[1]
+  })
   
   x.domain(d3.extent(currentCoinData, (currency) => { return currency.day }))  
   y.domain([d3.min(currentCoinData, (currency) => { return currency[currentDataType] }), 
@@ -159,8 +162,22 @@ const update = () => {
   } else if (currentDataType == "daily_vol") {
     yLabel.text("24 Hour Trading Volume")
   }
+  let formatTime = d3.timeFormat("%m/%d/%y")
+  $("#dateLabel1").text(formatTime(new Date(sliderValues[0])))
+  $("#dateLabel2").text(formatTime(new Date(sliderValues[1])))
     
   g.select('.line')
     .transition(t)
-    .attr('d', line(cleanData[currentCoin]))
+    .attr('d', line(currentCoinData))
 }
+
+$("#date-slider").slider({
+  range: true,
+  max: parseTime("31/10/2017").getTime(),
+  min: parseTime("12/05/2013").getTime(),
+  step: 86400000,
+  values: [parseTime("12/5/2013").getTime(), parseTime("31/10/2017").getTime()],
+  slide: function(event, ui){
+    update()
+  }
+})
