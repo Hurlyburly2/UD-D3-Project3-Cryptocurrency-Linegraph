@@ -24,7 +24,7 @@ let y = d3.scaleLinear().range([height, 0])
 let xAxisCall = d3.axisBottom()
   .ticks(4)
 let yAxisCall = d3.axisLeft()
-  // .tickFormat((string) => { return parseInt(string / 1000) + "k"})
+  
 
 // Axis groups
 let xAxis = g.append('g')
