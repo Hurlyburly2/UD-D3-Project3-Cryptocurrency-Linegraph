@@ -14,7 +14,7 @@ let g = svg.append('g')
 
 // For tooltip
 // returns the index of a date in an array if it was added in order
-let bisectDate = d3.bisector((cleanData) => { return cleanData.day }).left
+let bisectDate = d3.bisector((data) => { return data.year }).left
 
 //Scales
 let x = d3.scaleTime().range([0, width])
@@ -24,7 +24,6 @@ let y = d3.scaleLinear().range([height, 0])
 let xAxisCall = d3.axisBottom()
   .ticks(4)
 let yAxisCall = d3.axisLeft()
-  
 
 // Axis groups
 let xAxis = g.append('g')
@@ -75,6 +74,49 @@ d3.json('data/coins.json').then((data) => {
     
     update(cleanData)
   })
+  
+  // //  TOOLTIP
+  // 
+  // let focus = g.append('g') // hide or show whole tooltip
+  //   .attr('class', 'focus')
+  //   .style('display', 'none')
+  // 
+  // focus.append('line')    // adds a vertical line from x-axis to focused point
+  //   .attr('class', 'x-hover-line hover-line')
+  //   .attr('y1', 0)
+  //   .attr('y2', height)
+  // 
+  // focus.append('line')    // adds a horizontal line
+  //   .attr('class', 'y-hover-line hover-line')
+  //   .attr('x1', 0)
+  //   .attr('x2', width)
+  // 
+  // focus.append('circle')    // adds circle to focus
+  //   .attr('r', 7.5)
+  // 
+  // focus.append('text')      // appends text to focus
+  //   .attr('x', 15)
+  //   .attr('dy', '.31em')
+  // 
+  // g.append('rect')          // invisible rectange for attaching events
+  //   .attr('class', 'overlay')
+  //   .attr('width', width)
+  //   .attr('height', height)
+  //   .on('mouseover', () => { focus.style('display', null) })
+  //   .on('mouseout', () => { focus.style('display', 'none') })
+  //   .on('mousemove', mousemove)
+  // 
+  // function mousemove() {
+  //   let x0 = x.invert(d3.mouse(this)[0])  // find time value that matches coordinate info of mouse
+  //   let i = bisectDate(data, x0, 1)   // find the date where the time would belong if it was a datapoint
+  //   let d0 = data[i - 1]
+  //   let d1 = data[i]
+  //   let d = x0 - d0.year > d1.year - x0 ? d1 : d0     // comparing date we're looking at with closest two time values. Returns closest data point
+  //   focus.attr('transform', 'translate(' + x(d.year) + ", " + y(d.value) + ")")   // shifts focus to data point we want to be looking at
+  //   focus.select('text').text(d.value)    // update tooltip with y value we're looking at
+  //   focus.select('.x-hover-line').attr('y2', height - y(d.value))   // adjusts second point of x-axis line to new y value
+  //   focus.select('.y-hover-line').attr('x2', -x(d.year))    // does the same with y-axis
+  // }
 })
 
 $("#var-select")
@@ -113,6 +155,7 @@ const update = () => {
     .y((data) => { return y(data[currentDataType])} )
   
   if (currentDataType == "price_usd") {
+    // yAxisCall.tickFormat((string) => { return "$" + string })
     yLabel.text("Price (USD)")
   } else if (currentDataType == "market_cap") {
     yLabel.text("Market Capitalization")
@@ -126,51 +169,6 @@ const update = () => {
   g.select('.line')
     .transition(t)
     .attr('d', line(currentCoinData))
-    
-  // TOOLTIP
-  
-  let focus = g.append('g') // hide or show whole tooltip
-    .attr('class', 'focus')
-    .style('display', 'none')
-  focus.append('line')    // adds a vertical line from x-axis to focused point
-    .attr('class', 'x-hover-line hover-line')
-    .attr('y1', 0)
-    .attr('y2', height)
-  focus.append('line')    // adds a horizontal line
-    .attr('class', 'y-hover-line hover-line')
-    .attr('x1', 0)
-    .attr('x2', width)
-  focus.append('circle')    // adds circle to focus
-    .attr('r', 7.5)
-  focus.append('text')      // appends text to focus
-    .attr('x', 15)
-    .attr('dy', '.31em')
-  svg.append('rect')          // invisible rectange for attaching events
-    .attr('transform', 'translate(' + margin.left + "," + margin.top + ")")
-    .attr('class', 'overlay')
-    .attr('width', width)
-    .attr('height', height)
-    .on('mouseover', () => { focus.style('display', null) })
-    .on('mouseout', () => { focus.style('display', 'none') })
-    .on('mousemove', mousemove)
-    
-  function mousemove() {
-    debugger
-    let x0 = x.invert(d3.mouse(this)[0])
-    debugger
-    let i = bisectDate(currentCoinData, x0, 1)
-    debugger
-    let d0 = currentCoinData[i - 1]
-    debugger
-    let d1 = currentCoinData[i]
-    debugger
-    let d = (d1 && d0) ? (x0 - d0.date > d1.date - x0 ? d1 : d0) : 0;
-    debugger
-    focus.attr('transform', 'translate(' + x(d.day) + ", " + y(d[currentDataType]) + ")")
-    focus.select('text').text(d[currentDataType])
-    focus.select('.x-hover-line').attr('y2', height - y(d[currentDataType]))
-    focus.select('.y-hover-line').attr('x2', -x(d.day))
-  }
 }
 
 $("#date-slider").slider({
