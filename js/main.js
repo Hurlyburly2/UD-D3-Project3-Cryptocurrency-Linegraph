@@ -24,7 +24,7 @@ let y = d3.scaleLinear().range([height, 0])
 let xAxisCall = d3.axisBottom()
   .ticks(4)
 let yAxisCall = d3.axisLeft()
-  // .tickFormat((string) => { return parseInt(string / 1000) + "k"})
+  
 
 // Axis groups
 let xAxis = g.append('g')
@@ -101,6 +101,17 @@ const update = () => {
   y.domain([d3.min(currentCoinData, (currency) => { return currency[currentDataType] }), 
       d3.max(currentCoinData, (currency) => { return currency[currentDataType] }) ])
   
+  if (currentDataType == "price_usd") {
+    yLabel.text("Price (USD)")
+    yAxisCall.tickFormat((string) => { return "$" + string.toFixed(2) })
+  } else if (currentDataType == "market_cap") {
+    yLabel.text("Market Capitalization")
+    yAxisCall.tickFormat((string) => { return d3.format(",.2r")(string / 1000000) + "M" })
+  } else if (currentDataType == "daily_vol") {
+    yLabel.text("24 Hour Trading Volume")
+    yAxisCall.tickFormat((string) => { return d3.format(",.2r")(string / 1000000) + "M" })
+  }
+  
   xAxis
     .transition(t())
     .call(xAxisCall.scale(x))
@@ -111,14 +122,7 @@ const update = () => {
   let line = d3.line()
     .x((data) => { return x(data.day)} )
     .y((data) => { return y(data[currentDataType])} )
-  
-  if (currentDataType == "price_usd") {
-    yLabel.text("Price (USD)")
-  } else if (currentDataType == "market_cap") {
-    yLabel.text("Market Capitalization")
-  } else if (currentDataType == "daily_vol") {
-    yLabel.text("24 Hour Trading Volume")
-  }
+
   let formatTime = d3.timeFormat("%m/%d/%y")
   $("#dateLabel1").text(formatTime(new Date(sliderValues[0])))
   $("#dateLabel2").text(formatTime(new Date(sliderValues[1])))
@@ -155,22 +159,17 @@ const update = () => {
     .on('mousemove', mousemove)
     
   function mousemove() {
-    debugger
     let x0 = x.invert(d3.mouse(this)[0])
-    debugger
     let i = bisectDate(currentCoinData, x0, 1)
-    debugger
     let d0 = currentCoinData[i - 1]
-    debugger
     let d1 = currentCoinData[i]
-    debugger
     let d = (d1 && d0) ? (x0 - d0.date > d1.date - x0 ? d1 : d0) : 0;
-    debugger
     focus.attr('transform', 'translate(' + x(d.day) + ", " + y(d[currentDataType]) + ")")
     focus.select('text').text(d[currentDataType])
     focus.select('.x-hover-line').attr('y2', height - y(d[currentDataType]))
     focus.select('.y-hover-line').attr('x2', -x(d.day))
   }
+  
 }
 
 $("#date-slider").slider({
